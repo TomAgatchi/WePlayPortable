@@ -1,0 +1,8 @@
+{
+	"title": "WePlay GameBoy",
+	"port": 3000,
+	"allowed_inputs": ["start", "select", "left", "right", "up", "down", "a", "b"],
+	"rom": "roms/pokemon_blue.gb"
+	,"cheatsalt" : "FDSg!LG397%t93agwh{"
+	,"cheatpwd":"apples"
+}
