@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no">
+		<link rel="stylesheet" href="css/mobile.css"/>
+		<title><%= title %></title>
+	</head>
+	<body>
+		<!--reference: http://upload.wikimedia.org/wikipedia/commons/9/93/Game_boy_pocket.png-->
+		
+	<div id="entirediv">
+	
+		<h1 id="title"></h1>
+		<div id="cheatMenu">
+			<!-- Rounded switch -->
+			<div id="mySidenav" class="sidenav">
+				<a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+			
+			<div class="onoffswitch">
+				<input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="toggleRandomInputs_button" >
+				</input>
+				<label class="onoffswitch-label" for="toggleRandomInputs_button">
+						<span class="onoffswitch-inner"></span>
+						<span class="onoffswitch-switch"></span>
+				</label>
+			</div>
+			<a id="inputCycle_button" class="action-button noselect animate black">Input Mode</a>
+			<a id="saveTheState_button" class="action-button noselect animate black">Save State</a>
+			<a id="loadTheState_button" class="action-button noselect animate black">Load State</a>
+			<a id="fastForward_button" class="action-button noselect animate black">Fast Forward</a>
+		 <!-- <button id="vinesauce_button">VS</button>-->
+			<a id="infiniteMasterBalls_button" class="action-button noselect animate black">Balls</a>
+			<a id="money_button" class="action-button noselect animate black">Money</a>
+			<a id="fly_button" class="action-button noselect animate black">Float</a>
+			</div>
+
+		</div>
+
+		<!-- Use any element to open the sidenav -->
+		<div id = "cheatButton" ><button onclick="openNav()">Cheat Menu &#187;</button></div>
+
+				<div id="gamePad">
+			<!-- <button id="toggleRandomInputs_button">Rands</button> -->
+
+				<TABLE style="float: right; width: 180px; padding-right: 10px;">
+					<TR class="blank_row">
+					<TD colspan="3"></TD>
+			</TR>
+					<TR ALIGN="right" VALIGN="center"> 
+						 <TD><button id="a_button" class="action-button noselect animate white ab">A</button></TD>
+					</TR>
+					<TR ALIGN="left" VALIGN="center"> 
+						 <TD><button id="b_button" class="action-button noselect animate white ab">B</button> </TD>
+					</TR>
+				</TABLE>
+
+			<div style="overflow:hidden; padding-bottom: 90px;">
+				<TABLE BORDER="0" style="float: left; width: 200px;">
+					<TR ALIGN="center" VALIGN="bottom"> 
+						 <TD colspan="3"><button id="arrow_up" class="action-button noselect animate white dpad up">&#x25B5;</button></TD>
+					</TR> 
+					<TR ALIGN="center" VALIGN="bottom"> 
+						 <TD><button id="arrow_left" class="action-button noselect animate white dpad left">&#x25C3;</button></TD>
+						 <TD></TD>
+						 <TD><button id="arrow_right" class="action-button noselect animate white dpad right">&#x25B9;</button></TD>
+					</TR>
+					<TR ALIGN="center" VALIGN="bottom"> 
+						 <TD colspan="3"> <button id="arrow_down" class="action-button noselect animate white dpad down">&#x25BF;</button> </TD>
+					</TR>
+				</TABLE>
+			</div>
+			<div style="overflow:hidden; padding-left: 10px;">
+				<TABLE width="100%">
+					<TR VALIGN="center" ALIGN="CENTER">
+						 <TD class="blank_entry"></TD>
+						 <TD><button id="start_button" class="action-button noselect animate white start">START</button> </TD>
+						 <TD><button id="select_button" class="action-button noselect animate white select">SELECT</button> </TD>
+						 <TD class="blank_entry"></TD>
+					</TR>
+					<TR class="blank_row">
+					<TD colspan="3"></TD>
+			</TR>
+				</TABLE>
+				</div>
+			</div>
+	
+	</div>
+	
+		<script src="/js/sha256.js"></script>
+		<script src="/js/blockTEA.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<script>
+			var socket = io.connect('<%= url %>');  //localhost:3000  REPLACE WITH SERVER URL<%= url %>');
+			var username = null;
+		var frameDelayms = 0;
+		var gettingFrame = frameDelayms;
+		var waitingForFrame = false;
+		var waitingForFrameTImeoutMax = 250;
+		var waitingForFrameTImeout = waitingForFrameTImeoutMax;
+		
+		var sessionKeyValue = ""; 
+		var sessionInitialValue = 0;
+
+		var allowKeyHolding = true;
+
+		function tox64Scrambled( d, s )
+		{
+			return Tea.encrypt( "" + JSON.stringify( d ), s );
+		}
+
+		function fromx64Scrambled( d, s )
+		{
+			return JSON.parse( Tea.decrypt( d, s ) );
+		}
+
+		//Hide controls initially
+		var hideme = document.getElementById('gamePad');
+		hideme.style.visibility='hidden' 
+
+			function toggleError(msg) {
+				if (document.body.className.indexOf('error') === -1)
+					document.body.className += 'error';
+				var h1 = document.getElementById('title');
+				h1.innerHTML = msg + ". Reload the page.";
+			}
+
+			socket.on('cheats:begin', function ( kob ) {
+
+		cheatpwd = prompt('Enter Cheat Password');
+
+		if( cheatpwd.length > 63 ){
+				return toggleError('Incorrect Password');
+		}else{
+
+			sessionInitialValue = '' + kob.rv;
+			var hashed = hash( cheatpwd + sessionInitialValue + '<%= cheatsalt %>' )
+
+			return socket.emit( 'cheats:submitpasshash', {data:hashed} );
+		}
+			});
+
+			function sendCheatCommand( obj )
+			{
+					socket.emit('cheats:action', { data:tox64Scrambled( obj, sessionKeyValue ) } );
+			}
+
+			socket.on('cheats:accepted', function ( kob ) {
+
+				var res = fromx64Scrambled( kob.data, sessionInitialValue );
+
+			sessionKeyValue = res.sv;
+
+		//Show controls
+		var hideme = document.getElementById('gamePad');
+		hideme.style.visibility='visible' 
+
+				var h1 = document.getElementById('title');
+				h1.innerHTML = "CHEATER"
+
+				// document.getElementById("toggleRandomInputs_button").onclick = function() {
+				//  sendCheatCommand( { "action":"toggleAutoplay" } );
+				// };
+
+				 var checkboxElement = document.getElementById("toggleRandomInputs_button")
+				checkboxElement.onchange = function() {
+
+					sendCheatCommand( { "action":"toggleAutoplay", "value":checkboxElement.checked } );
+				} //YOU FORGOT THIS CLOSING }
+
+				document.getElementById("saveTheState_button").onclick = function() {
+					sendCheatCommand( { "action":"saveState" } );
+				};
+
+				document.getElementById("loadTheState_button").onclick = function() {
+					sendCheatCommand( { "action":"loadState" } );
+				};
+
+				document.getElementById("fastForward_button").onclick = function() {
+					sendCheatCommand( { "action":"setSpeed" } );
+				};
+
+				// document.getElementById("vinesauce_button").onclick = function() {
+				//   sendCheatCommand( { "action":"toggleVineSauceMode" } );
+				// };
+
+				document.getElementById("infiniteMasterBalls_button").onclick = function() {
+					sendCheatCommand( { "action":"infiniteMasterBalls" } );
+				};
+
+				document.getElementById("money_button").onclick = function() {
+					sendCheatCommand( { "action":"lemmeBorrowCupuhDolluhs" } );
+				};
+
+				document.getElementById("fly_button").onclick = function() {
+					sendCheatCommand( { "action":"flyYouPieceOfShit" } );
+				};
+
+				document.getElementById("inputCycle_button").onclick = function() {
+					sendCheatCommand( { "action":"inputCycleasfhgasdfhg" } );
+				};
+
+				document.getElementById("arrow_up").onclick = function() {
+					socket.emit('keypress', {key: "up"});
+				};
+				document.getElementById("arrow_left").onclick = function() {
+					socket.emit('keypress', {key: "left"});
+				};
+				document.getElementById("arrow_right").onclick = function() {
+					socket.emit('keypress', {key: "right"});
+				};
+				document.getElementById("arrow_down").onclick = function() {
+					socket.emit('keypress', {key: "down"});
+				};
+				document.getElementById("a_button").onclick = function() {
+					socket.emit('keypress', {key: "a"});
+				};
+				document.getElementById("b_button").onclick = function() {
+					socket.emit('keypress', {key: "b"});
+				};
+				document.getElementById("select_button").onclick = function() {
+					socket.emit('keypress', {key: "select"});
+				};
+				document.getElementById("start_button").onclick = function() {
+					socket.emit('keypress', {key: "start"});
+				};
+
+			});
+
+			function openNav() {
+					document.getElementById("mySidenav").style.width = "250px";
+					document.getElementById("placeholder").style.marginLeft = "250px";
+					document.body.style.backgroundColor = "rgba(0,0,0,0.4)";
+			}
+
+			/* Set the width of the side navigation to 0 and the left margin of the page content to 0, and the background color of body to white */
+			function closeNav() {
+					document.getElementById("mySidenav").style.width = "0";
+					document.getElementById("placeholder").style.marginLeft = "0";
+					document.body.style.backgroundColor = "white";
+			}
+
+			socket.on('disconnect', function () {
+				return toggleError('Server disconnected');
+			})
+
+		</script>
+	</body>
+</html>

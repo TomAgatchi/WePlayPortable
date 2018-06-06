@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no">
+		<link rel="stylesheet" href="css/mobile.css"/>
+		<title><%= title %></title>
+	</head>
+	<body>
+		<!--reference: http://upload.wikimedia.org/wikipedia/commons/9/93/Game_boy_pocket.png-->
+	
+		<div id="canvasdiv">
+			<canvas id="mainCanvas" ></canvas>
+		</div>
+
+		<div id="entirediv">
+	
+		<h1 id="title"></h1>
+			<div id="gamePad">
+			<!-- <button id="toggleRandomInputs_button">Rands</button> -->
+
+			<TABLE style="float: right; width: 180px; padding-right: 10px; background-color: transparent;">
+				<TR class="blank_row">
+					<TD colspan="3"></TD>
+				</TR>
+				<TR ALIGN="right" VALIGN="center"> 
+					<TD><button id="a" class="action-button noselect animate white ab">A</button></TD>
+				</TR>
+				<TR ALIGN="left" VALIGN="center"> 
+					<TD><button id="b" class="action-button noselect animate white ab">B</button> </TD>
+				</TR>
+			</TABLE>
+
+				<div style="overflow:hidden; padding-bottom: 90px;">
+					<TABLE BORDER="0" style="float: left; width: 200px;">
+						<TR ALIGN="center" VALIGN="bottom"> 
+							<TD colspan="3"><button id="up" class="action-button noselect animate white dpad up">&#x25B2;</button></TD>
+						</TR> 
+						<TR ALIGN="center" VALIGN="bottom"> 
+							<TD><button id="left" class="action-button noselect animate white dpad left">&#x25C4;</button></TD>
+							<TD></TD>
+							<TD><button id="right" class="action-button noselect animate white dpad right">&#x25BA;</button></TD>
+						</TR>
+						<TR ALIGN="center" VALIGN="bottom"> 
+							<TD colspan="3"> <button id="down" class="action-button noselect animate white dpad down">&#x25BC;</button> </TD>
+						</TR>
+					</TABLE>
+				</div>
+				<div style="overflow:hidden; padding-left: 10px;">
+					<TABLE width="100%">
+						<TR VALIGN="center" ALIGN="CENTER">
+							<TD class="blank_entry"></TD>
+							<TD><button id="start" class="action-button noselect animate white start">START</button> </TD>
+							<TD><button id="select" class="action-button noselect animate white select">SELECT</button> </TD>
+							<TD class="blank_entry"></TD>
+						</TR>
+						<TR class="blank_row">
+							<TD colspan="3"></TD>
+						</TR>
+					</TABLE>
+				</div>
+			</div>
+	
+		</div>
+	
+	<script src="/socket.io/socket.io.js"></script>
+	
+	<script>
+		var mainCanvas = null;
+		var keyZones = [
+				["right", 39, 0],
+				["left", 37, 0],
+				["up", 38, 0],
+				["down", 40, 0],
+				["a", 65, 0],
+				["b", 90, 0],
+				["select", 16, 0],
+				["start", 13, 0]
+		];
+		
+
+		var socket = io.connect('<%= url %>');	//localhost:3000	REPLACE WITH SERVER URL<%= url %>');
+		
+		var username = null;
+		var frameDelayms = 0;
+		var gettingFrame = frameDelayms;
+		var waitingForFrame = false;
+		var waitingForFrameTImeoutMax = 250;
+		var waitingForFrameTImeout = waitingForFrameTImeoutMax;
+	
+		var allowKeyHolding = true;
+	
+
+		function toggleError(msg) {
+			if (document.body.className.indexOf('error') === -1)
+			document.body.className += 'error';
+			var h1 = document.getElementById('title');
+			h1.innerHTML = msg + ". Reload the page.";
+		}
+
+		socket.on('io:askusername', function () {
+			username = prompt('Choose a username');
+			if (!username || !username.trim().length) {
+				return toggleError('No name');
+			}
+			return socket.emit('io:username', {name: username});
+		});
+
+		socket.on('disconnect', function () {
+			return toggleError('Server disconnected');
+		})
+
+		function XHRGETRestCallText( api, callback )
+		{
+			var oReq = new XMLHttpRequest();
+			
+			oReq.onreadystatechange = function(e)
+			{
+				if( oReq.readyState == 4 && oReq.status == 200 ){
+					callback( oReq.responseText );
+				}
+			}
+			
+			oReq.open( "GET", api )
+			oReq.send();
+			return oReq;
+		}
+	
+		function doFrameCheck( dtms )
+		{
+			gettingFrame -= dtms;
+			if( !waitingForFrame ){
+				if( gettingFrame <= 0 ){
+					//mainCanvas
+					waitingForFrame = true;
+					waitingForFrameTImeout = waitingForFrameTImeoutMax;
+					gettingFrame = frameDelayms;
+					
+					//currentFrame
+					
+					//socket.emit('getframe', { name:username });
+					XHRGETRestCallText( "/currentFrame", function( s ){
+						
+						var img = new Image;
+						img.src = s;
+						
+						if( img.width > 0 && img.height > 0 ){
+							
+							var ctx = mainCanvas.getContext('2d');
+							//ctx.globalCompositeOperation = 'destination-over'
+							
+							if( mainCanvas.width != img.width || mainCanvas.height != img.height ){
+								mainCanvas.width = img.width;
+								mainCanvas.height = img.height;
+							}
+							
+							ctx.drawImage( img, 0, 0, mainCanvas.width, mainCanvas.height );
+							
+						}
+						
+						waitingForFrame = false;
+					  
+					} );
+				}
+			}else{
+				
+				//Wait End timeout
+				waitingForFrameTImeout -= dtms;
+				if( waitingForFrameTImeout <= 0 ){
+					waitingForFrameTImeout = waitingForFrameTImeoutMax;
+					waitingForFrame = false;
+				}
+			}
+			
+			if( allowKeyHolding ){
+				//Event keys
+				for (var index = 0; index < keyZones.length; ++index) {
+					if ( keyZones[index][2] != 0 ){
+						socket.emit( 'keypress', {key: keyZones[index][0]} );
+					}
+				}
+			}
+			
+			window.requestAnimationFrame( doFrameCheck );
+		}
+
+	socket.on('io:launchPlay', function (data) {
+		
+		mainCanvas = document.getElementById("mainCanvas");
+		
+		var h1 = document.getElementById('title');
+		h1.innerHTML = data.name;
+	
+		//old input method (works but it sucks)
+		/*
+		document.getElementById("up").onclick = function() {
+			socket.emit('keypress', {key: "up"});
+		};
+
+		document.getElementById("left").onclick = function() {
+			socket.emit('keypress', {key: "left"});
+		};
+		document.getElementById("right").onclick = function() {
+			socket.emit('keypress', {key: "right"});
+		};
+		document.getElementById("down").onclick = function() {
+			socket.emit('keypress', {key: "down"});
+		};
+		document.getElementById("a").onclick = function() {
+			socket.emit('keypress', {key: "a"});
+		};
+		document.getElementById("b").onclick = function() {
+			socket.emit('keypress', {key: "b"});
+		};
+		document.getElementById("select").onclick = function() {
+			socket.emit('keypress', {key: "select"});
+		};
+		document.getElementById("start").onclick = function() {
+			socket.emit('keypress', {key: "start"});
+		};
+		*/
+
+		document.addEventListener("keydown", keyDownTextField, false);
+		document.addEventListener("keyup", keyUpTextField, false);
+
+		function keyDownTextField(e) 
+		{
+			var keyCode = e.keyCode;
+			
+			for (var index = 0; index < keyZones.length; ++index) {
+				if (keyCode === keyZones[index][1]){
+					if( keyZones[index][2] == 0 ){
+						if( !allowKeyHolding ){
+							socket.emit( 'keypress', {key: keyZones[index][0]} );
+						}
+						keyZones[index][2] += 1
+					}
+				}
+			}
+		}
+
+		function keyUpTextField(e) 
+		{
+			var keyCode = e.keyCode;
+			
+			for (var index = 0; index < keyZones.length; ++index) {
+				if (keyCode === keyZones[index][1]){
+					keyZones[index][2] = 0
+				}
+			}
+		}
+
+		function mouseDownTextField(e) 
+		{
+			var button = e;
+			
+			for (var index = 0; index < keyZones.length; ++index) {
+				if (button === keyZones[index][0]){
+					if( keyZones[index][2] == 0 ){
+						if( !allowKeyHolding ){
+							socket.emit( 'keypress', {key: keyZones[index][0]} );
+						}
+						keyZones[index][2] += 1
+					}
+				}
+			}
+		}
+
+		function mouseUpTextField(e) {
+			var button = e;
+			for (var index = 0; index < keyZones.length; ++index) {
+				if (button === keyZones[index][0]){
+					keyZones[index][2] = 0
+				}
+			}
+		}
+
+		function noButtonJamming( ) {
+			for (var index = 0; index < keyZones.length; ++index) {
+				keyZones[index][2] = 0
+			}
+		}
+		
+		//If you want to mess with holding keys more...
+		function holdit( btn, action, start, speedup ) 
+		{
+			var t;
+
+			var repeat = function () {
+				action();
+				t = setTimeout(repeat, start);
+				start = start / speedup;
+			}
+
+			btn.onmousedown = function() {
+				repeat();
+			}
+
+			btn.onmouseup = function () {
+				clearTimeout(t);
+			}
+		}
+
+	
+		document.body.addEventListener("mousedown", function(event) {
+			if (event.target.nodeName == "BUTTON")
+				// console.log("Pressed", event.target.id);
+				mouseDownTextField( event.target.id );
+		});
+
+		document.body.addEventListener("mouseup", function(event) {
+			if (event.target.nodeName == "BUTTON"){
+				// console.log("Released", event.target.id);
+				mouseUpTextField( event.target.id );
+			}else{
+				//otherwise, allows you to jam buttons if you release somewhere else
+				noButtonJamming();
+			}
+		});
+
+		//doesn't work on touchscreen without this
+		document.body.addEventListener("touchstart", function(event) {
+			if (event.target.nodeName == "BUTTON")
+				// console.log("Pressed", event.target.id);
+				mouseDownTextField( event.target.id );
+		});
+
+		document.body.addEventListener("touchend", function(event) {
+			if (event.target.nodeName == "BUTTON"){
+				// console.log("Released", event.target.id);
+				mouseUpTextField( event.target.id );
+			}else{
+				//otherwise, allows you to jam buttons if you release somewhere else
+				noButtonJamming();
+			}
+		});
+	
+		window.onresize = function()
+		{
+			var cw = window.innerWidth;
+			var ch = window.innerHeight;
+			
+			var canvasdiv = document.getElementById("canvasdiv");
+			var ratio = 800/600;
+			if( cw > (ch*ratio) ){
+				canvasdiv.style.height = ch + 'px';
+				canvasdiv.style.width = Math.floor( ch * ratio ) + 'px';
+			}else{
+				canvasdiv.style.width = cw+ 'px';
+				canvasdiv.style.height = Math.floor( cw / ratio ) + 'px';
+			}
+		}
+		
+		window.onresize();
+		window.requestAnimationFrame( doFrameCheck );
+		
+	});
+
+
+		</script>
+	</body>
+</html>
