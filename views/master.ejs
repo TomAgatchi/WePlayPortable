@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US">
+    <head>
+    	<script src="/socket.io/socket.io.js"></script>
+    	<link rel="stylesheet" type="text/css" href="/css/pokemon_font.css"/>
+    	<link rel="stylesheet" type="text/css" href="/css/master.css"/>
+		<script>
+		var inFullscreen = false;
+		var mainCanvas = null;
+		var fullscreenCanvas = null;
+		var showAsMinimal = false;
+		var lowHeader = null;
+
+		var gamespeed = 1;
+		var hitRandomButtons = false;
+		var vinesauceMode = false;
+		var gamePlayTimeSeconds = 0.0;
+
+		var keyZones = [
+			["right", [39], [1,2]],
+			["left", [37], [1,2]],
+			["up", [38], [1,2]],
+			["down", [40], [1,2]],
+			["a", [88, 74], [1,1]],
+			["b", [90, 81, 89], [1,1]],
+			["select", [16], [0.05,0]],
+			["start", [13], [0.1,0]]
+		];
+		var cout = console.log.bind(console);
+		var game_loaded = false;
+		var reconnect = null;
+		var socket = io.connect('<%= url %>');	//localhost:3000	REPLACE WITH SERVER URL<%= url %>');
+		var _already = false;
+		var stack = [];
+		var stackChanged = false;
+		var stackChangeDelay = 0.0
+		//var list = null;
+		var userDisplaylist= null;
+
+		var keyHisto = {};
+		
+		var canUploadFrame = true;
+
+		function histoSelect( A, F )
+		{
+			if( F == undefined ){
+				F = [];
+				for( var k in A ){
+					F.push( 1 );
+				}
+			}
+			
+			if( !Array.isArray( A ) ){
+				A = Object.keys( A );
+			}
+
+			if( A.length == F.length && A.length > 0 ){
+
+				var s = 0;
+				var cdf = [];
+				for( var k in F ){
+					s += F[k];
+					cdf.push( s );
+				}
+
+				var r = Math.random()*s;	//Pass RNG as a argument...
+
+				var i = 0;
+				while( r > cdf[ i ] ){
+					i += 1;
+				}
+				if( i >= cdf.length ){
+					i = cdf.length-1;
+				}
+
+				return A[i];
+
+			}
+			return null;
+		}
+
+		var inputPatterns = [
+			[ null, false ]
+			,[ "right", true ]
+			,[ "left", true ]
+			,[ "up", true ]
+			,[ "down", true ]
+			,[ "a", false ]
+			,[ "b", false ]
+			,[ "start", false ]
+			,[ "select", false ]
+		];
+
+		function randomInputsV3( timePlayingSeconds )
+		{
+			useangle = (timePlayingSeconds / 8) * gamespeed;
+
+
+
+			var cs = Math.cos( useangle );
+			var ss = Math.sin( useangle );
+
+			wayts = [ cs, ss, -cs, -ss, 1/10, 1/100, 1/10000, 1/10000 ];	//R U L D
+			for( var i = 0; i < 4; i += 1 ){
+				wayts[i] = 0.01 + Math.max( 0, wayts[i] );	//Jitter it JUST IN CASE
+			}
+
+			var keesh = ["right","up","left","down","a","b","start","select"]
+			var dis = histoSelect( keesh, wayts );
+
+			return dis;
+		}
+		
+		var randomInputsPattern = 0;
+		var randomInputsNextPatternTime = 0;
+
+		function randomInputsV2( timePlayingSeconds )
+		{
+			//NOT CORRECT, gets the job done
+			if( randomInputsNextPatternTime < timePlayingSeconds ){
+
+				var patternIndex = histoSelect( [0,1,2,3,4,5,6,7,8], [ 150,150,150,150,150,60,20,1,1 ] );
+
+				var waitTime = 0;
+
+				var isHeld = inputPatterns[ patternIndex ][1];
+				if( isHeld ){
+					waitTime = histoSelect( [0,0.1,0.25,0.5,1.0], [ 10,5,4,3,1 ] );
+				}
+
+				randomInputsNextPatternTime = timePlayingSeconds + waitTime / gamespeed;//inputPatterns[ patternIndex ][1];
+				randomInputsPattern = patternIndex;
+			
+				return inputPatterns[ randomInputsPattern ][0];
+			}
+
+			if( inputPatterns[ randomInputsPattern ][1] ){
+				return inputPatterns[ randomInputsPattern ][0];
+			}else{
+				return null;
+			}
+
+		}
+
+		function randomInputsV1( timePlayingSeconds )
+		{
+			//"timeReplaying" to REPLAY a recorded list of inputs...
+
+			//Or you could use it to adust input frequencies...
+
+			if( Math.random() > 0.1*gamespeed ){	//~every 165ms
+				return null;
+			}
+
+			//NOT CORRECT, gets the job done
+			var adjustedtime = timePlayingSeconds * gamespeed
+
+			var bf = (1.0 + Math.sin( adjustedtime / 100.0 ))/2.0
+
+			var rf = (1.0 + Math.sin( adjustedtime * ( 1 / ( 10 + 20*bf ) ) ))/2.0;
+
+			var fa = [];
+			var sa = [];
+			for( var i=0; i < keyZones.length; i += 1 ){
+				var kz = keyZones[i][2];
+				var pf = (kz[0] - kz[1])*rf + kz[0];
+				sa.push( i );
+				fa.push( pf );
+			}
+
+			var thisone = histoSelect( sa, fa );
+			var choice = keyZones[ thisone ][0];
+
+			//const buttons = ["right","left","up","down","a","b","select","start"];
+			//var choice = keyZones[Math.floor(Math.random()*keyZones.length)][0];
+
+			return choice;
+		}
+
+		var randomButtonsMethodSelectonMethod = "all";
+		var randomButtonsMethod = "randumb";
+		var randomMethodDispatcher = {
+			"randumb":randomInputsV1
+			,"patterner":randomInputsV2
+			,"uzumaki":randomInputsV3
+		}
+		
+		function randomInputs( timePlayingSeconds )
+		{
+			var nextrng = randomButtonsMethod;
+
+			methodSelecter = randomMethodDispatcher;
+
+			//if( randomButtonsMethodSelectonMethod != "all" ){ methodSelecter = { "randumb":randomMethodDispatcher[ "randumb" ] }; }
+			//if( randomButtonsMethodSelectonMethod == "randumb" ){ nextrng = randomMethodDispatcher[ randomButtonsMethodSelectonMethod  ]; }
+
+			if( randomMethodDispatcher.hasOwnProperty( randomButtonsMethodSelectonMethod ) ){
+
+				nextrng = randomButtonsMethodSelectonMethod;
+
+			}else{
+
+				//lols
+				//if( Math.random() < 0.1 ){	//WAY TOO FAST
+				if( Math.random() < 0.01 * gamespeed ){	//ABOUT RIGHT
+				//if( Math.random() < 0.001 ){	//ABOUT RIGHT
+					nextrng = histoSelect( methodSelecter );
+				}
+			}
+			
+			//uncomment to lock it on one particular mode
+			//nextrng = "patterner";
+
+			/*
+
+			if( (Math.floor( timePlayingSeconds ) & 16) != 0 ){
+				nextrng = "patterner";
+			}else{
+				nextrng = "randumb"
+			}
+			*/
+
+			if( nextrng != randomButtonsMethod ){
+
+				for( var k in keyHisto ){
+					keyHisto[k] = 0;
+				}
+
+				randomButtonsMethod = nextrng;
+			}
+
+			return randomMethodDispatcher[ randomButtonsMethod ]( timePlayingSeconds );
+		}
+
+		function addToStack( des )
+		{
+			stack.unshift( des );	//queue not stack lols
+			if( stack.length > 20 ){
+				stack.pop()
+			}
+			stackChanged = true;
+			stackChangeDelay = 0.5;
+		}
+
+
+		  window.onload = function () {
+		  		//list = document.getElementById('inputStack');
+		  		userDisplaylist = document.getElementById('inputStack');
+		  		mainCanvas = document.getElementById("mainCanvas");
+		  		lowHeader = document.getElementById("lowheader");
+				socket.emit('master:ready', {});
+			}
+			// Load game
+		  socket.on('master:loadgame', function (data) {
+		  	gamePlayTimeSeconds = 0;
+
+			window.dispatchEvent(new Event('resize'));
+		
+		  	if (!game_loaded)
+		    	start(mainCanvas, base64_decode(data.file));
+		    game_loaded = true;
+		  });
+		  socket.on('master:push', function (data) {
+			//console.log( "pushed ", data )
+			  
+			pushKey( data );
+
+			//Currently has: data.name, data.key
+
+			//Add user to key -> user display listing... Hm.
+			//
+			addToStack( data );
+			//stack.unshift( data );	//queue not stack lols
+			//if( stack.length > 10 ){
+			//	stack.pop()
+			//}
+			//stackChanged = 1.0;
+
+			//STACK CHANGED so rebuild it...
+
+			/*
+		  	var newEl = document.createElement('li');
+		  	newEl.innerHTML = "<span class='name'>" + data.name + "</span><span class='input'>" + data.key + "</span>";
+		  	userDisplaylist.appendChild(newEl);
+		  	*/
+
+			//key -> user mapping (hm... clients only send 'down' instead of 'down/up' messages...)
+
+		  	//addToStack(data);
+		  	//if (stack.length === 1 && !_already)
+		  	//	pushKey(removeTopStack());
+				
+		  });
+		  
+		  socket.on('master:gotframe', function (data) {
+			  canUploadFrame = true;
+		  });
+		  
+		  jerkwads = null;
+
+		  socket.on('master:gotstate', function (data) {
+		  		for( var k in data ){
+		  			jerkwads = data;
+			  		loadState( jerkwads );
+			  		break;
+		  		}
+		  });
+
+		  //Commands from the CHEATER inputs
+		  socket.on('master:command', function (data) {
+
+		  		if( data.dothis == "toggleAutoplay" ){
+
+		  			//do something
+		  			// hitRandomButtons = !hitRandomButtons;
+
+	  				if( data.value != undefined ){
+		  				
+		  				hitRandomButtons = data.value;
+		  			}else{
+
+			  			//do something
+			  			hitRandomButtons = !hitRandomButtons;
+			  		}
+				
+				}else if( data.dothis == "setSpeed" ){
+
+		  			if(gamespeed >= 33){
+		  				gamespeed = 1;
+		  			}else gamespeed += 1;
+
+		  			//console.log(gamespeed);
+		  			//socket.emit('master:setSpeed', gamespeed);
+		  			setSpeed( gamespeed );
+
+		  		
+		  		}else if( data.dothis == "toggleVineSauceMode" ){
+
+		  			//socket.emit('master:setSpeed', gamespeed);
+		  			vinesauceMode = !vinesauceMode;
+
+		  		
+		  		}else if( data.dothis == "saveState" ){
+
+			  		jerkwads = saveState();
+
+			  		//Send to server to SAVE IT
+					socket.emit('master:uploadstate', jerkwads);
+
+		  		}else if( data.dothis == "loadState" ){
+
+		  			//Ask server for save state data/file...
+					socket.emit('master:downloadstate', {});
+
+		  		}else if( data.dothis == "infiniteMasterBalls" ){
+
+					//write byte 01 for masterball to d31e (address for 1st item)
+					//then write 63 to D31F for 'infinite' quantity
+					
+					//gbWriteMemory( 52536, 01 );//walk through walls!
+
+
+					//Doesnt work :(
+					//gbWriteMemory( 53116, 01 );//free masterballs!
+
+					gbWriteMemory( 54046, 04 );//pokeball 1st position
+					gbWriteMemory( 54047, 63 );
+					gbWriteMemory( 54048, 02 );//ultraball 2nd position
+					gbWriteMemory( 54049, 30 );
+					gbWriteMemory( 54050, 03 );//greatball 3rd position
+					gbWriteMemory( 54051, 50 );
+					gbWriteMemory( 54052, 01 );//masterball 4th position
+					gbWriteMemory( 54053, 30 );
+
+					gbWriteMemory( 54045, 4 );//total number of items to hold
+
+		  		}else if( data.dothis == "lemmeBorrowCupuhDolluhs" ){
+
+					gbWriteMemory( 54087, 99 );
+					gbWriteMemory( 54088, 99 );
+					gbWriteMemory( 54089, 99 );//all 3 lines for infinite money
+
+
+		  		}else if( data.dothis == "flyYouPieceOfShit" ){
+		  			//After jump over next shrub thingy
+					gbWriteMemory( 55060, 10 );
+
+				}else if( data.dothis == "inputCycleasfhgasdfhg" ){
+
+		  			var pks = Object.keys( randomMethodDispatcher );
+		  			pks.push( 'all' );
+		  			pks.sort();
+		  			var idex = 1 + pks.findIndex( function( x ){ return x == randomButtonsMethodSelectonMethod } );
+		  			idex %= pks.length;
+		  			if( idex < 0 ){ idex = 0; }
+					randomButtonsMethodSelectonMethod = pks[ idex ];
+
+		  		}else{
+
+			  		console.log( "Got command: ", data );
+			  	}
+
+		  });
+
+		  socket.on('disconnect', function () {
+		  	console.log('Disconnected!');
+		  	reconnect = setInterval(function () {
+		  		if (socket.socket.connected === true) {
+		  			console.log('Reconnected ;)');
+		  			clearInterval(reconnect);
+		  			reconnect = null;
+		  			return;
+		  		}
+		  		console.log('Trying to reconnect');
+		  		socket.socket.reconnect();
+		  	}, 10000);
+		  });
+
+		  function pushKey(data) {
+		  	_already = true;
+
+		  	if( keyHisto.hasOwnProperty( data.key ) ){
+		  		keyHisto[ data.key ] += 1
+		  	}else{
+				keyHisto[ data.key ] = 1
+			}
+
+			gbHoldInput( data.key, 0.05/gamespeed );	//Default is hold key for 50 ms... Hm. Fastest button pushing person on planet is 1000/17 > 50ms 
+
+			//R = gbInputStackGet()
+
+			/*
+
+		  	GameBoyKeyDown(data.key);
+		  	setTimeout(function () {
+		  		GameBoyKeyUp(data.key);
+		  		if (stack.length > 0)
+		  			pushKey(removeTopStack());
+		  		else
+		  			_already = false;
+		  	}, 33/gamespeed);	//holding down every key for 50ms ???
+
+			*/
+		  }
+
+		  /*
+		  function addInputToUi(data) {
+		  	var newEl = document.createElement('li');
+		  	newEl.innerHTML = "<span class='name'>" + data.name + "</span><span class='input'>" + data.key + "</span>";
+		  	userDisplaylist.appendChild(newEl);
+		  }
+
+		  function addToStack(data) {
+		  	if (stack.length >= 10) {
+		  		stack.pop();
+		  		stack.push(data);
+				var li = userDisplaylist.getElementsByTagName('li')[9];
+				if (li)
+					userDisplaylist.removeChild(li);
+			} else {
+				stack.push(data);
+			}
+		  	addInputToUi(data);
+		  }
+
+		  function removeTopStack() {
+		  	var key = stack.shift();
+			var li = userDisplaylist.getElementsByTagName('li')[0];
+			if (li)
+				userDisplaylist.removeChild(li);
+		  	if (stack.length < 10)
+		  		return key;
+		  	addInputToUi(stack[9]);
+		  	return key;
+		  }
+
+		  */
+		  
+		  
+		previousTime = performance.now();
+		function doFrameCheck( dtms )
+		{
+			var dt = dtms - previousTime;
+			previousTime = dtms
+			gamePlayTimeSeconds += (dt/1000.0);
+
+			if( mainCanvas != null ){
+				if( !canUploadFrame ){
+					//waiting...
+				}else{
+
+					//Do something each frame here
+
+					if( stackChangeDelay > 0 ){
+
+						stackChangeDelay -= dt/1000.0
+
+						if( stackChangeDelay <= 0 ){
+
+							stackChanged = true;
+
+							if( stack.length > 0 ){
+								stack.pop();
+							}
+						}
+					}else{
+
+						if( stack.length > 0 ){
+							stackChangeDelay = 0.1;
+						}
+					}
+
+					if( stackChanged ){
+						stackChanged = false;
+						while(userDisplaylist.firstChild) {
+							userDisplaylist.removeChild(userDisplaylist.firstChild);
+						}
+						userDisplaylist.textContent = "";
+
+						for( var is = 0; is < stack.length; is += 1 ){
+
+							var newEl = document.createElement('li');
+							newEl.innerHTML = "<span class='name'>" + stack[is].name + "</span><span class='input'>" + stack[is].key + "</span>";
+							userDisplaylist.appendChild(newEl);
+
+						}
+					}
+
+					lowHeader.innerHTML = "";
+
+					var changeS = "";
+
+					if( gamespeed != 1 ){
+
+						changeS += "Speed: " + gamespeed + " ";
+
+					}
+
+					if( hitRandomButtons ){
+
+						var key = randomInputs( gamePlayTimeSeconds );
+
+						if( key != null ){
+
+							// ? apply input to game?
+							var fakedata = { key:key, name:"" };
+
+							pushKey( fakedata );
+
+							addToStack( fakedata );
+
+						  	//addToStack(fakedata);
+						  	//if (stack.length === 1 && !_already)
+						  	//	pushKey(removeTopStack());
+
+						}
+
+					  	//var curs = changeS;
+						//curs += key + "," + curs;
+
+						var ps = randomButtonsMethod + " H ";//H for histogram 
+						for( var k in keyHisto ){
+							var v = Math.ceil( keyHisto[k]*100 )/100;
+							ps += k + ":"+v+", ";
+						}
+						changeS += ps
+
+					}
+
+					if( changeS.length > 80 ){
+						changeS = changeS.substr( 0, 80 );
+					}
+
+					if( lowHeader.innerHTML != changeS ){
+						lowHeader.innerHTML = changeS;
+					}
+
+
+					if( vinesauceMode ){
+						//We love you Vinny!
+						if( Math.random() < 0.1 ){
+							var memdex = Math.floor( gbMemorySize() * Math.random() )
+							var v = gbPeekMemory( memdex );
+							var nv = Math.floor(v + Math.random()*255) & 255;
+							gbWriteMemory( memdex, nv );
+							console.log( "tweaked: " + memdex, v, nv );
+						}
+					}
+
+					// var showspeed = lowHeader.innerHTML + gamespeed;
+					//ONLY if we have a NEW FRAME please???
+								
+					//this.drawContextOffscreen = this.canvasOffscreen.getContext("2d");
+					//this.drawContextOnscreen = this.canvas.getContext("2d");
+					
+					var dis = getInternalCanvasSnapshot()
+					
+					if( dis != undefined ){
+						
+						if( dis.width > 0 && dis.height > 0 ){
+							
+							if( mainCanvas.width != dis.width || mainCanvas.height != dis.height ){
+								//mainCanvas.width = dis.width;
+								//mainCanvas.height = dis.height;
+							}
+							canUploadFrame = false;
+							
+							//NO, just the BUFFER not the WHOLE canvas...
+							
+							//Could gain a LOT of speed by doing a manual byte dump rather than PNG conversions...
+
+							//var cx = dis.getContext("2d");
+							//cx.moveTo( 0, 0 );
+							//cx.lineTo(100,100);
+							//cx.stroke();
+
+							var pushme = dis.toDataURL( 'image/png' );//Faster for networking, lossless, but heavy CPU
+							
+							//var pushme = dis.toDataURL( 'image/jpeg' );//Faster for networking, lossy, but heavy CPU
+							//var pushme = dis.toDataURL( 'image/jpeg' );//Faster for networking, lossy, but heavy CPU
+							
+							socket.emit('master:uploadframe', { d:pushme });
+						}
+					}
+				}
+			}
+
+			window.requestAnimationFrame( doFrameCheck );
+		}
+		window.requestAnimationFrame( doFrameCheck );
+		  
+		window.onresize = function()
+		{
+			var cw = window.innerWidth;
+			var ch = window.innerHeight;
+			
+			var canvasdiv = document.getElementById("canvasdiv");
+			var ratio = 800/600;
+			if( cw > (ch*ratio) ){
+				canvasdiv.style.height = ch + 'px';
+				canvasdiv.style.width = Math.floor( ch * ratio ) + 'px';
+			}else{
+				canvasdiv.style.width = cw+ 'px';
+				canvasdiv.style.height = Math.floor( cw / ratio ) + 'px';
+			}
+		}
+
+		</script>
+        <script type="text/javascript">
+	    
+		 </script>
+        <!-- <script type="text/javascript" src="js/other/windowStack.js"></script>
+        <script type="text/javascript" src="js/other/terminal.js"></script>
+       	<script type="text/javascript" src="js/other/gui.js"></script> -->
+        <script type="text/javascript" src="js/other/base64.js"></script>
+        <script type="text/javascript" src="js/other/json2.js"></script>
+        <script type="text/javascript" src="js/other/swfobject.js"></script>
+        <script type="text/javascript" src="js/other/resampler.js"></script>
+        <script type="text/javascript" src="js/other/XAudioServer.js"></script>
+        <script type="text/javascript" src="js/other/resize.js"></script>
+        <script type="text/javascript" src="js/emulators/GBC/GameBoyCore.js"></script>
+        <script type="text/javascript" src="js/emulators/GBC/GameBoyIO.js"></script>
+        <title><%= title %></title>
+    </head>
+    <body>
+	
+		<div id="canvasdiv">
+			<canvas id="mainCanvas" ></canvas>
+		</div>
+	
+		<div id="entirediv">
+		
+			<div id="rightPanel">
+				<h1 style="display:block"><%= title %></h1>
+				<ul id="inputStack">
+				</ul>
+			</div>
+			
+			<!-- <h1 style="text-align:center;">PLAY: <%= url %></h1> -->
+			<h5 id="lowheader" style="text-align: right; position:absolute; bottom:0; left:0; margin-right: 50px;"class="content"></h5>
+		
+		</div>
+	</body>
+</html>
