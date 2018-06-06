@@ -1,10 +1,10 @@
 lettucePlayPortable
 ==================
 
-Multiplayer GameBoy emulator using node.js, javascript, ejs, HTML5, socket.io, engine.io and express.
+Multiplayer GameBoy emulator using node.js, javascript, ejs, HTML5, socket.io, engine.io and express inspired by romualdr's githubplaysgameboy.
 
   
-Server tested on Windows, Mac, and Android\Linux via Termux. This is COMPLETELY portable.
+Server tested on Windows 7 & 10, Mac OSX, and Android\Linux via Termux. This is COMPLETELY portable.
 
 **DISCLAIMER**
 
@@ -26,15 +26,6 @@ Edit *config.json* to set the port, cheater password, and rom to play. This make
 3. Connect one or more players by going to <serverIP>:<port> and selecting a user name.
 4. [optional] Troll everyone playing by connecting to cheater (<serverIP>:<port>/cheats) and type in the password. This allows you to flood   the emulator with inputs, save state, load state, fast forward up to 33x normal speed, and edit specific memory addresses corresponding with a few good cheats if you're playing pokemon red or blue. The cheater does not display the screen and does not support holding buttons down, or pressing multiple buttons at once. Normal players do.
 
-
-Launch the server
-
-`node app.js`
-
-You are ready to go !
-
-Special thanks
---------------
-
-grantgalitz for his [GameBoy Online emulator](https://github.com/grantgalitz/GameBoy-Online).
-romualdr for the initial work and idea.
+Screenshots
+----------
+![alt text](http://url/to/img.png)
