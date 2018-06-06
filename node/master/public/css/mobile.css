@@ -1,0 +1,351 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  font-family: Verdana;
+  color: gray;
+}
+
+body h1 { text-align: center; }
+
+::-webkit-scrollbar { 
+    display: none; 
+}
+
+
+body button {
+  font-weight: bold;
+  /*padding: 15px 20px !important;*/
+  opacity:0.4;
+  outline: none;
+  border: none;
+  border-radius: 1px;
+  /*box-shadow: 0 10px #999;*/
+  
+}
+
+/*keep buttons from highlighting*/
+.noselect {
+  -webkit-tap-highlight-color: transparent; /* Android */
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}
+
+.blank_row
+{
+    height: 25px !important; 
+    background-color: transparent;
+}
+
+.blank_entry
+{
+    height: 20px !important;
+    width: 200px !important;
+    background-color: transparent;
+}
+
+.animate
+{
+  transition: all 0.05s;
+  -webkit-transition: all 0.05s;
+}
+
+.action-button
+{
+  position: relative;
+  /*padding: 5px 40px;*/
+  margin: 5px 5px 5px 5px;
+  float: center;
+  border-radius: 5px;
+  /*font-family: 'Pacifico', cursive;*/
+  font-size: 25px;
+  color: #FFF;
+  /*color: gray;*/
+  text-decoration: none;
+  /*box-shadow: 10 10px #999;*/
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  transition: 0.05s;
+}
+
+
+.green
+{
+  border-radius: 50%;
+  background-color: #82BF56;
+  border-bottom: 5px solid #669644;
+  border-left: 2px solid #669644;
+  text-shadow: 0px -2px #669644;
+}
+
+.ab
+{
+  padding: 25px 30px;
+  border-radius: 50%;
+}
+
+.white
+{
+  background-color: transparent;
+  border-bottom: 5px solid #000000;
+  border-left: 4px solid #000000;
+  text-shadow: 2px -2px #000000;
+}
+
+.dpad
+{
+  /*font-size: 35px;*/
+  /*padding: 5px 15px;*/
+  border-radius: 5px;
+  background-color: transparent;
+}
+
+.left
+{
+  padding: 10px 15px;
+  border-left: 4px solid #000000;
+  border-right: 0px solid #000000;
+  border-top: 2px solid #000000;
+}
+
+.right
+{
+  padding: 10px 15px;
+  border-left: 0px solid #000000;
+  border-right: 2px solid #000000;
+  border-top: 2px solid #000000;
+}
+
+.up
+{
+  padding: 5px 15px;
+  border-bottom: 0px solid #000000;
+  border-right: 2px solid #000000;
+  border-left: 4px solid #000000;
+  border-top: 2px solid #000000;
+  text-shadow: 0px -3px #000000;
+}
+
+.down
+{
+  padding: 5px 15px;
+  border-left: 4px solid #000000;
+  border-right: 2px solid #000000;
+  text-shadow: 0px -3px #000000;
+}
+
+.start
+{
+  border-left: 2px solid #000000;
+  border-right: 0px solid #000000;
+  font-size: 15px;
+  padding: 7px 20px;
+  border-radius: 20px;
+  background-color: transparent;
+  /*text-shadow: -2px -2px #000000;*/
+}
+.select
+{
+  border-left: 2px solid #000000;
+  font-size: 15px;
+  padding: 7px 20px;
+  border-radius: 20px;
+  background-color: transparent;
+}
+
+.black
+{
+  background-color: #000000;
+  border: 5px solid #000000;
+  text-shadow: 0px -2px #000000;
+}
+
+.action-button:active
+{
+  transform: translate(0px,5px);
+  -webkit-transform: translate(0px,5px);
+  border: 1px solid;
+}
+
+#cheatButton {
+  opacity:1;
+  position: absolute; top:9px; left:8px;
+}
+
+#cheatButton button {
+    background-color: #000000;
+    border: none;
+    color: white;
+    padding: 15px 30px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 28px;
+    opacity:0.5;
+}
+
+
+body.error h1 {
+  color: red;
+}
+
+body.error #gamePad {
+  display: none;
+}
+
+#gamePad {
+	position:absolute;
+	bottom:10px;
+	left:0px;
+	width:100%;
+}
+
+/*Trying to not allow A & B table to not cover up dpad on small screens*/
+/*z-index didn't work either. Oh well...*/
+tr{
+  background-color: transparent;
+}
+
+td.button {
+  background-color: transparent;
+}
+
+canvas{
+	pointer-events:none;
+	max-width:100%;
+	max-height:100%;
+	width:100%;
+	height:100%;
+}
+
+#entirediv{
+	position:absolute;
+	width:100%;
+	height:100%;
+}
+
+#canvasdiv{
+	position:absolute;
+	width:100%;
+	height:100%;
+	halign:center;
+	valign:center;
+	text-align:center;
+	top:0;
+	left:50%;
+	transform: translate(-50%,0);
+	pointer-events:none;	
+}
+
+.onoffswitch {
+    position: relative; width: 150px;
+    -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
+}
+.onoffswitch-checkbox {
+    display: none;
+}
+.onoffswitch-label {
+    display: block; overflow: hidden; cursor: pointer;
+    border: 2px solid #999999; border-radius: 50px;
+}
+.onoffswitch-inner {
+    display: block; width: 200%; margin-left: -100%;
+    transition: margin 0.1s ease-in 0s;
+}
+.onoffswitch-inner:before, .onoffswitch-inner:after {
+    display: block; float: left; width: 50%; height: 24px; padding: 0; line-height: 24px;
+    font-size: 19px; color: white; font-family: Trebuchet, Arial, sans-serif; font-weight: bold;
+    box-sizing: border-box;
+}
+.onoffswitch-inner:before {
+    content: "AUTOBOT";
+    padding-left: 10px;
+    background-color: #39ED2D; color: #FFFFFF;
+}
+.onoffswitch-inner:after {
+    content: "PLAYER";
+    padding-right: 10px;
+    background-color: #EEEEEE; color: #999999;
+    text-align: right;
+}
+.onoffswitch-switch {
+    display: block; width: 16px; height:16px; margin: 4px;
+    background: #FFFFFF;
+    position: absolute; top: 8px; bottom: 0;
+    right: 130px;
+    border: 2px solid #999999; border-radius: 50px;
+    transition: all 0.1s ease-in 0s; 
+}
+.onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-inner {
+    margin-left: 0px;
+}
+.onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-switch {
+    right: 8px; 
+}
+
+
+/* The side navigation menu */
+.sidenav {
+    height: 100%; /* 100% Full-height */
+    width: 0; /* 0 width - change this with JavaScript */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Stay on top */
+    top: 0; /* Stay at the top */
+    left: 0;
+    background-color: #000000;/* #111; */ /* Black*/
+    opacity: 0.7;
+    overflow-x: hidden; /* Disable horizontal scroll */
+    padding-top: 70px; /* Place content 60px from the top */
+    transition: 0.05s; /* 0.5 second transition effect to slide in the sidenav */
+}
+
+/* The navigation menu links */
+.sidenav a {
+    padding: 8px 8px 8px 32px;
+    text-decoration: none;
+    font-size: 25px;
+    /*color: #818181;*/
+    color: white;
+    display: block;
+    transition: 0.1s;
+}
+
+.sidenav div {
+    padding: 8px 8px 8px 32px;
+    text-decoration: none;
+}
+
+/* When you mouse over the navigation links, change their color */
+.sidenav a:hover {
+    color: #f1f1f1;
+}
+
+/* Position and style the close button (top right corner) */
+.sidenav .closebtn {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+}
+
+/* Style page content - use this if you want to push the page content to the right when you open the side navigation */
+#main {
+    transition: margin-left .1s;
+    padding: 20px;
+}
+
+/* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
+@media screen and (max-height: 450px) {
+    .sidenav {padding-top: 15px;}
+    .sidenav a {font-size: 18px;}
+}
+
