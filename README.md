@@ -1,7 +1,9 @@
 lettucePlayPortable
 ==================
 
-![alt text](http://url/to/img.png)
+![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/Screenshot_20180606-155649.png)
+![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/Screenshot_20180606-155734.png)
+
 
 
 Multiplayer GameBoy emulator using node.js, javascript, ejs, HTML5, socket.io, engine.io and express inspired by romualdr's githubplaysgameboy.
@@ -25,8 +27,8 @@ Edit *config.json* to set the port, cheater password, and rom to play. This make
 * cheatpwd: Password to enter for cheater screen
 
 1. Run RunServer.bat on windows or RunServer.sh on mac\linux
-2. Start the master by going to <serverIP>:<port>/master
-3. Connect one or more players by going to <serverIP>:<port> and selecting a user name.
-4. [optional] Troll everyone playing by connecting to cheater (<serverIP>:<port>/cheats) and type in the password. This allows you to flood   the emulator with inputs, save state, load state, fast forward up to 33x normal speed, and edit specific memory addresses corresponding with a few good cheats if you're playing pokemon red or blue. The cheater does not display the screen and does not support holding buttons down, or pressing multiple buttons at once. Normal players do. You can add custom input modes for the cheater in master.ejs. 
+2. Start the master by going to '[serverIP]:[port]/master'
+3. Connect one or more players by going to '[serverIP]:[port]' and selecting a user name.
+4. [optional] Troll everyone playing by connecting to cheater ('[serverIP]:[port]/cheats') and type in the password. This allows you to flood   the emulator with inputs, save state, load state, fast forward up to 33x normal speed, and edit specific memory addresses corresponding with a few good cheats if you're playing pokemon red or blue. The cheater does not display the screen and does not support holding buttons down, or pressing multiple buttons at once. Normal players do. You can add custom input modes for the cheater in master.ejs. 
   
 Have fun!!!
