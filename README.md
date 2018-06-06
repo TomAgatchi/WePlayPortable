@@ -3,6 +3,11 @@ lettucePlayPortable
 
 ![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/Screenshot_20180606-155649.png)
 ![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/Screenshot_20180606-155734.png)
+![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/cheater.PNG)
+![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/pkmnblue1.PNG)
+![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/pkmnblue2.PNG)
+![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/wof3.PNG)
+![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/wof2.PNG)
 
 
 
