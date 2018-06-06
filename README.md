@@ -1,5 +1,6 @@
 lettucePlayPortable
 ==================
+COMPLETELY portable multiplayer GameBoy emulator using node.js, javascript, ejs, HTML5, socket.io, engine.io and express inspired by romualdr's githubplaysgameboy.
 
 ![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/Screenshot_20180606-155649.png)
 ![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/Screenshot_20180606-155734.png)
@@ -10,9 +11,7 @@ lettucePlayPortable
 ![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/wof2.PNG)
 
 
-
-Multiplayer GameBoy emulator using node.js, javascript, ejs, HTML5, socket.io, engine.io and express inspired by romualdr's githubplaysgameboy.
-This is COMPLETELY portable and not at all taxing for any system. I can run the server and cheater from my phone and have serveral players controling the game at once from their phones.
+This is not at all taxing for any system. I have run the server and cheater from my phone and had serveral players controling the game at once from their phones with no issues.
   
 Server tested on Windows 7 & 10, Mac OSX, and Android\Linux via Termux. Tested in firefox and chrome.
 
