@@ -1,6 +1,6 @@
 lettucePlayPortable
 ==================
-COMPLETELY portable multiplayer GameBoy emulator using node.js, javascript, ejs, HTML5, socket.io, engine.io and express inspired by romualdr's githubplaysgameboy.
+COMPLETELY portable multiplayer GameBoy emulator using node.js, javascript, ejs, HTML5, socket.io, engine.io and express inspired by romualdr's githubplaysgameboy. Currently, I'm working on adding a Nintendo 64 component to this project.
 
 ![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/Screenshot_20180606-155649.png)
 ![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/Screenshot_20180606-155734.png)
