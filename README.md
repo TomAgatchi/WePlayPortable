@@ -13,13 +13,11 @@ This is a COMPLETELY portable multiplayer GameBoy emulator using node.js, javasc
 ![alt text](https://github.com/TomAgatchi/lettucePlayPortable/blob/master/screenshots/wof2.PNG)
 
 
-This is not at all taxing for any system. I have run the server and cheater from my phone and had serveral players controling the game at once from their phones with no issues. The screen update for the players does miss a frame or two every now and then if you have the cheater flooding the master with inputs, but it's still playable.
+I have run the server and cheater from my phone Pixel 2XL and had serveral players controling the game at once from their phones with no issues. The screen update for the players does miss a frame or two every now and then if you have the cheater flooding the master with inputs, but it's still playable.
   
 Server tested on Windows 7 & 10, Mac OSX, and Android\Linux via Termux. Tested in firefox and chrome.
 
-**DISCLAIMER**
-
-You must own a legal .gb rom in order to use this.
+I only used ROMS of games in which I purchased a physical game cart for the actual Gameboy color system. Sadly we live in a day where Nintendo has made using something like this more difficult. But make your own ROMS if you still have those old games and have some fun anyways.
 
 How to use
 ----------
